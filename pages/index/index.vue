@@ -1,5 +1,9 @@
 <template>
 	<view class="container">
+		<view class="menu">
+			<uni-segmented-control :current="current" :values="values" @clickItem="onClickItem" 
+				styleType="button" activeColor="#2B9939"></uni-segmented-control>
+		</view>
 		<view class="layout">
 			<view class="box" v-for="(item,index) in pets" :key="item._id">
 				<view class="pic">
@@ -9,12 +13,29 @@
 				<view class="author">—— {{item.author}}</view>
 			</view>
 		</view>
+		
+		<view class="float">
+			<view class="item" @click="onRefresh">
+				<uni-icons size="26" type="refreshempty" color="#888"></uni-icons>
+			</view>
+			<view class="item" @click="onTop">
+				<uni-icons size="26" type="arrow-up" color="#888"></uni-icons>
+			</view>
+		</view>
+		
+		<view class="loadMore">
+			<uni-load-more status="loading"></uni-load-more>
+		</view>
 	</view>
 </template>
 
 <script setup>
+import { computed } from 'vue';
 
 const pets = ref([]);
+const current = ref(0);
+const classify = [{key:"all",value:"全部"},{key:"dog",value:"狗狗"},{key:"cat",value:"猫猫"}];
+const values = computed(()=> classify.map(item=>item.value));
 
 //发送网络请求
 function network(){
@@ -22,10 +43,11 @@ function network(){
 	uni.request({
 		url:"https://tea.qingnian8.com/tools/petShow",
 		data:{
-			size: 10
+			size: 5,
+			type: classify[current.value].key
 		},
 		header:{
-			"access-key":"300584"
+			"access-key":"108692"
 		}
 	}).then(res => {
 		console.log(res);
@@ -70,12 +92,35 @@ onReachBottom(() => {
 onPullDownRefresh(() => {
 	console.log("下拉刷新...");
 	pets.value = [];
+	current.value = 0;
 	network();
 });
+
+function onRefresh(){
+	console.log("刷新")
+	uni.startPullDownRefresh()
+}
+
+function onTop(){
+	console.log("顶部")
+	uni.pageScrollTo({
+		scrollTop: 0
+	})
+}
+
+function onClickItem(e){
+	console.log(e);
+	pets.value = [];
+	current.value = e.currentIndex;
+	network();
+}
 </script>
 
 <style lang="scss" scoped>
 .container{
+	.menu {
+		padding: 50rpx 50rpx 0;
+	}
 	.layout{
 		padding: 50rpx;
 		.box{
@@ -100,6 +145,26 @@ onPullDownRefresh(() => {
 				color: #888;
 			}
 		}
+	}
+	.float {
+		position: fixed;
+		right: 30rpx;
+		bottom: 80rpx;
+		padding-bottom: env(safe-area-inset-bottom);
+		.item {
+			width: 90rpx;
+			height: 90rpx;
+			line-height: 90rpx;
+			background-color: rgba(255, 255, 255, 0.9);
+			border-radius: 50%;
+			margin-bottom: 20rpx;
+			text-align: center;
+			border: 1px solid #eee;
+		}
+	}
+	
+	.loadMore{
+		padding-bottom: calc(env(safe-area-inset-bottom) + 50rpx);
 	}
 }
 </style>
